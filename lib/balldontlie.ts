@@ -33,13 +33,15 @@ export const getPlayers = async (
   return fetchJson(`${BASE_URL}/players?${params}`);
 };
 
-// Get season averages for one or more players
-export const getSeasonAverages = async (
+// Get season averages for a single player
+export const getSeasonAverage = async (
   season: number,
-  playerIds: number[]
+  playerId: number
 ): Promise<{ data: BDLSeasonAverage[] }> => {
-  const params = new URLSearchParams({ season: String(season) });
-  playerIds.forEach((id) => params.append('player_ids[]', String(id)));
+  const params = new URLSearchParams({
+    season: String(season),
+    player_id: String(playerId),
+  });
   return fetchJson(`${BASE_URL}/season_averages?${params}`);
 };
 
