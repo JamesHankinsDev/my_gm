@@ -1,14 +1,11 @@
 -- Hoops GM — Initial Database Schema
 -- Run with: npx supabase db push
 
--- Enable UUID generation
-create extension if not exists "uuid-ossp";
-
 -- ============================================================
 -- Leagues
 -- ============================================================
 create table leagues (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   name text not null,
   commissioner_id uuid not null,
   season int not null default 2025,
@@ -20,7 +17,7 @@ create table leagues (
 -- Teams (one per user per league)
 -- ============================================================
 create table teams (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   league_id uuid not null references leagues(id) on delete cascade,
   user_id uuid not null,
   name text not null,
@@ -32,7 +29,7 @@ create table teams (
 -- Players (synced from BallDontLie API)
 -- ============================================================
 create table players (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   balldontlie_id int unique not null,
   full_name text not null,
   position text not null default '',
@@ -57,7 +54,7 @@ create type slot_type as enum ('starter', 'sixth_man', 'rotation', 'bench', 'ir'
 create type acquired_via as enum ('draft', 'free_agent', 'trade');
 
 create table roster_slots (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   team_id uuid not null references teams(id) on delete cascade,
   player_id uuid not null references players(id),
   season int not null,
@@ -74,7 +71,7 @@ create table roster_slots (
 -- Weekly lineups (coaching decisions)
 -- ============================================================
 create table weekly_lineups (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   team_id uuid not null references teams(id) on delete cascade,
   week int not null,
   season int not null,
@@ -87,7 +84,7 @@ create table weekly_lineups (
 -- Scoring logs
 -- ============================================================
 create table scoring_logs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   team_id uuid not null references teams(id) on delete cascade,
   week int not null,
   season int not null,
@@ -107,7 +104,7 @@ create table scoring_logs (
 create type pick_protection as enum ('none', 'top_n', 'lottery');
 
 create table draft_picks (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   league_id uuid not null references leagues(id) on delete cascade,
   season int not null,
   round int not null,
@@ -125,7 +122,7 @@ create type trade_status as enum ('pending', 'accepted', 'rejected', 'expired');
 create type trade_asset_type as enum ('player', 'pick');
 
 create table trades (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   league_id uuid not null references leagues(id) on delete cascade,
   status trade_status not null default 'pending',
   proposed_by_team_id uuid not null references teams(id),
@@ -133,7 +130,7 @@ create table trades (
 );
 
 create table trade_assets (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   trade_id uuid not null references trades(id) on delete cascade,
   from_team_id uuid not null references teams(id),
   to_team_id uuid not null references teams(id),
@@ -146,7 +143,7 @@ create table trade_assets (
 -- Drop & re-sign tracking
 -- ============================================================
 create table player_drop_log (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   player_id uuid not null references players(id),
   dropped_by_team_id uuid not null references teams(id),
   dropped_season int not null,
