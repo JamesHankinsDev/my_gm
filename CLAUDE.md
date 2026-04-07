@@ -7,7 +7,7 @@
 - `npm run typecheck` — TypeScript strict check
 - `npm test` — run Jest tests
 - `npm run test:watch` — run tests in watch mode
-- `npx supabase db push` — push schema migrations
+- `supabase db push` — push schema migrations (requires `supabase link` first)
 
 ## Project Structure
 

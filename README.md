@@ -32,7 +32,7 @@ npm run dev
 | `npm run build` | Production build |
 | `npm run typecheck` | TypeScript check |
 | `npm test` | Run tests |
-| `npx supabase db push` | Push schema migrations |
+| `supabase db push` | Push schema migrations (requires `supabase link`) |
 
 ## Project Structure
 
