@@ -330,17 +330,6 @@ export default function CommissionerPage() {
                 </div>
               ))}
 
-              <div className="card space-y-2">
-                <h2 className="font-bold text-slate-900">Coaching Bonus</h2>
-                <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 space-y-1">
-                  <p>Within 2 min: <span className="font-bold text-emerald-600">+2.0</span></p>
-                  <p>Within 5 min: <span className="font-bold text-emerald-600">+1.0</span></p>
-                  <p>Within 10 min: <span className="font-bold text-slate-600">0.0</span></p>
-                  <p>Over 10 min: <span className="font-bold text-flame">-1.0</span></p>
-                  <p>Correct DNP: <span className="font-bold text-emerald-600">+2.0</span></p>
-                  <p>Wrong DNP: <span className="font-bold text-flame">-3.0</span></p>
-                </div>
-              </div>
             </>
           )}
 
