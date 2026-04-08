@@ -22,8 +22,10 @@ export default function SignupPage() {
       body: JSON.stringify({ idToken }),
     });
     if (!res.ok) {
-      const json = await res.json();
-      throw new Error(json.error || 'Session creation failed');
+      const text = await res.text();
+      let msg = 'Session creation failed';
+      try { msg = JSON.parse(text).error || msg; } catch { /* HTML response */ }
+      throw new Error(msg);
     }
     router.push('/');
     router.refresh();
