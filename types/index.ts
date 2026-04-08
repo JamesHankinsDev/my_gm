@@ -136,6 +136,33 @@ export interface Player {
   per36_fgmiss: number;
 }
 
+// ---- Draft Types ----
+
+export type DraftMode = 'mock' | 'live';
+export type DraftStatus = 'setup' | 'in_progress' | 'completed';
+
+export interface DraftSession {
+  id: string;
+  league_id: string;
+  mode: DraftMode;
+  status: DraftStatus;
+  rounds: number;
+  current_pick: number;        // overall pick number (1-indexed)
+  pick_order: string[];        // team IDs in snake order for round 1
+  picks: DraftPick[];
+  created_at: string;
+}
+
+export interface DraftPick {
+  overall: number;
+  round: number;
+  pick_in_round: number;
+  team_id: string;
+  player_id: string | null;    // null = not yet picked
+  player_name?: string;
+  auto_picked?: boolean;
+}
+
 export interface RosterSlot {
   id: string;
   team_id: string;
@@ -173,7 +200,7 @@ export interface ScoringLog {
   final_score: number;
 }
 
-export interface DraftPick {
+export interface DraftPickAsset {
   id: string;
   league_id: string;
   season: number;

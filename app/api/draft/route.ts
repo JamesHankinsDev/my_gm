@@ -1,27 +1,90 @@
 import { NextResponse } from 'next/server';
+import { adminDb } from '@/lib/firebase-admin';
+import { getSessionUser } from '@/lib/auth-helpers';
+import { FieldValue } from 'firebase-admin/firestore';
+import { generateSnakePicks, shuffle } from '@/lib/draft';
+import type { DraftMode } from '@/types';
 
-// GET /api/draft — fetch draft board for a league
+// GET /api/draft?league_id=xxx — get active draft for a league
 export async function GET(request: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('league_id');
+  if (!leagueId) return NextResponse.json({ error: 'league_id required' }, { status: 400 });
 
-  if (!leagueId) {
-    return NextResponse.json({ error: 'league_id is required' }, { status: 400 });
+  // Find the most recent draft for this league
+  const snap = await adminDb
+    .collection('draft_sessions')
+    .where('league_id', '==', leagueId)
+    .orderBy('created_at', 'desc')
+    .limit(1)
+    .get();
+
+  if (snap.empty) {
+    return NextResponse.json({ data: null });
   }
 
-  // TODO: Fetch draft picks + lottery results from Supabase
-  return NextResponse.json({ data: [], message: 'Draft board — not yet implemented' });
+  const doc = snap.docs[0];
+  return NextResponse.json({ data: { id: doc.id, ...doc.data() } });
 }
 
-// POST /api/draft — make a draft pick
+// POST /api/draft — create a new draft session
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { league_id, team_id, player_id, pick_id } = body;
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  if (!league_id || !team_id || !player_id || !pick_id) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  const body = await request.json();
+  const { league_id, mode, rounds } = body as {
+    league_id: string;
+    mode: DraftMode;
+    rounds?: number;
+  };
+
+  if (!league_id || !mode) {
+    return NextResponse.json({ error: 'league_id and mode are required' }, { status: 400 });
   }
 
-  // TODO: Validate pick order, assign player to team, update draft_picks
-  return NextResponse.json({ message: 'Draft pick — not yet implemented' });
+  // Verify league exists and user is commissioner
+  const leagueDoc = await adminDb.collection('leagues').doc(league_id).get();
+  if (!leagueDoc.exists) {
+    return NextResponse.json({ error: 'League not found' }, { status: 404 });
+  }
+  if (leagueDoc.data()?.commissioner_id !== user.uid) {
+    return NextResponse.json({ error: 'Only the commissioner can start a draft' }, { status: 403 });
+  }
+
+  // Get all teams in the league
+  const teamsSnap = await adminDb
+    .collection('teams')
+    .where('league_id', '==', league_id)
+    .get();
+
+  const teamIds = teamsSnap.docs.map((d) => d.id);
+  if (teamIds.length < 2) {
+    return NextResponse.json({ error: 'Need at least 2 teams to draft' }, { status: 400 });
+  }
+
+  // Randomize draft order
+  const pickOrder = shuffle(teamIds);
+  const totalRounds = rounds ?? 10; // default: 10 rounds (full roster)
+  const picks = generateSnakePicks(pickOrder, totalRounds);
+
+  const draftRef = await adminDb.collection('draft_sessions').add({
+    league_id,
+    mode,
+    status: 'in_progress',
+    rounds: totalRounds,
+    current_pick: 1,
+    pick_order: pickOrder,
+    picks,
+    created_at: FieldValue.serverTimestamp(),
+  });
+
+  const draftDoc = await draftRef.get();
+  return NextResponse.json(
+    { data: { id: draftRef.id, ...draftDoc.data() } },
+    { status: 201 }
+  );
 }
