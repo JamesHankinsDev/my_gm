@@ -9,7 +9,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => {
+        if (!r.ok) return null;
+        const text = await r.text();
+        if (!text) return null;
+        try { return JSON.parse(text); } catch { return null; }
+      })
       .then((data) => {
         if (data?.uid) setUserId(data.uid);
         setLoading(false);
