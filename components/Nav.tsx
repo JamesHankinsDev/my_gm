@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import LeagueSwitcher from './LeagueSwitcher';
 
 const tabs = [
   { href: '/', label: 'Home', icon: HomeIcon },
@@ -28,6 +29,8 @@ export default function Nav() {
           <a href="/" className="text-xl font-bold tracking-tight">
             <span className="text-gold">HOOPS</span> GM
           </a>
+          <LeagueSwitcher />
+          <div className="w-px h-5 bg-white/20" />
           {tabs.map((tab) => {
             const active = pathname === tab.href;
             return (
@@ -74,9 +77,7 @@ export default function Nav() {
 
       {/* Mobile top bar */}
       <div className="md:hidden flex items-center justify-between bg-court text-white px-5 py-3">
-        <span className="text-lg font-bold tracking-tight">
-          <span className="text-gold">HOOPS</span> GM
-        </span>
+        <LeagueSwitcher />
         <button onClick={handleSignOut} className="text-xs text-white/60 hover:text-white">
           Sign Out
         </button>
