@@ -133,15 +133,29 @@ export default function CommissionerPage() {
               <label className="block text-xs font-medium text-slate-500 mb-1">League Name</label>
               <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input" required />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Season</label>
-                <input type="number" value={season} onChange={(e) => setSeason(Number(e.target.value))} className="input" />
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Season</label>
+              <input type="number" value={season} onChange={(e) => setSeason(Number(e.target.value))} className="input" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-2">League Size</label>
+              <div className="grid grid-cols-4 gap-2">
+                {[8, 12, 16, 20].map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setMaxTeams(size)}
+                    className={`py-2.5 rounded-xl text-sm font-bold transition-all ${
+                      maxTeams === size
+                        ? 'bg-court text-white shadow-md'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
               </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Max Teams</label>
-                <input type="number" min={2} max={20} value={maxTeams} onChange={(e) => setMaxTeams(Number(e.target.value))} className="input" />
-              </div>
+              <p className="text-xs text-slate-400 mt-1.5">{maxTeams} teams per league</p>
             </div>
           </div>
 
