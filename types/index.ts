@@ -18,6 +18,64 @@ export type CapZone = 'compliant' | 'tax' | 'lockout';
 
 // ---- Database Row Types ----
 
+export interface ScoringWeights {
+  // Stat categories
+  pts: number;
+  fg3m: number;
+  fgMissed: number;
+  ast: number;
+  to: number;
+  dreb: number;
+  oreb: number;
+  stl: number;
+  blk: number;
+  pf: number;
+  tf: number;
+  ff: number;
+  // Milestones
+  doubleDouble: number;
+  tripleDouble: number;
+  assists15: number;
+  rebounds20: number;
+}
+
+export const DEFAULT_SCORING_WEIGHTS: ScoringWeights = {
+  pts: 1.0,
+  fg3m: 0.1,
+  fgMissed: -0.1,
+  ast: 1.0,
+  to: -0.25,
+  dreb: 1.0,
+  oreb: 0.1,
+  stl: 1.25,
+  blk: 1.25,
+  pf: -0.1,
+  tf: -0.25,
+  ff: -0.5,
+  doubleDouble: 1.0,
+  tripleDouble: 2.0,
+  assists15: 2.0,
+  rebounds20: 2.0,
+};
+
+export interface SlotRules {
+  sixth_man_sim_min: number;
+  sixth_man_floor_min: number;
+  sixth_man_breakout_min: number;
+  rotation_sim_min: number;
+  rotation_floor_min: number;
+  rotation_breakout_min: number;
+}
+
+export const DEFAULT_SLOT_RULES: SlotRules = {
+  sixth_man_sim_min: 20,
+  sixth_man_floor_min: 15,
+  sixth_man_breakout_min: 25,
+  rotation_sim_min: 10,
+  rotation_floor_min: 8,
+  rotation_breakout_min: 20,
+};
+
 export interface LeagueSettings {
   max_teams: number;
   cap_limit: number;
@@ -25,6 +83,8 @@ export interface LeagueSettings {
   commissioner_veto: boolean;
   draft_type: 'snake' | 'auction';
   scoring_notes: string;
+  scoring_weights: ScoringWeights;
+  slot_rules: SlotRules;
 }
 
 export const DEFAULT_LEAGUE_SETTINGS: LeagueSettings = {
@@ -34,6 +94,8 @@ export const DEFAULT_LEAGUE_SETTINGS: LeagueSettings = {
   commissioner_veto: true,
   draft_type: 'snake',
   scoring_notes: '',
+  scoring_weights: { ...DEFAULT_SCORING_WEIGHTS },
+  slot_rules: { ...DEFAULT_SLOT_RULES },
 };
 
 export interface League {
