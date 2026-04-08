@@ -8,7 +8,8 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 font-sans antialiased;
+    @apply bg-slate-50 text-slate-900 antialiased;
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
 
   /* Safe area padding for PWA / notched devices */
@@ -20,21 +21,49 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-flame text-white font-semibold rounded-xl px-5 py-3
-           active:scale-[0.97] transition-all duration-150
-           hover:bg-flame-dark focus:outline-none focus:ring-2 focus:ring-flame/50;
+    background-color: #e04e39;
+    color: white;
+    @apply font-semibold rounded-xl px-5 py-3 transition-all duration-150;
+  }
+  .btn-primary:hover {
+    background-color: #c43a27;
+  }
+  .btn-primary:active {
+    transform: scale(0.97);
+  }
+  .btn-primary:focus {
+    @apply outline-none ring-2;
+    --tw-ring-color: rgb(224 78 57 / 0.5);
+  }
+  .btn-primary:disabled {
+    @apply opacity-50;
   }
 
   .btn-secondary {
-    @apply bg-court text-white font-semibold rounded-xl px-5 py-3
-           active:scale-[0.97] transition-all duration-150
-           hover:bg-court-light focus:outline-none focus:ring-2 focus:ring-court/50;
+    background-color: #1d1160;
+    color: white;
+    @apply font-semibold rounded-xl px-5 py-3 transition-all duration-150;
+  }
+  .btn-secondary:hover {
+    background-color: #253b80;
+  }
+  .btn-secondary:active {
+    transform: scale(0.97);
+  }
+  .btn-secondary:focus {
+    @apply outline-none ring-2;
+    --tw-ring-color: rgb(29 17 96 / 0.5);
   }
 
   .btn-outline {
     @apply border-2 border-slate-200 text-slate-700 font-semibold rounded-xl px-5 py-3
-           active:scale-[0.97] transition-all duration-150
-           hover:border-slate-300 hover:bg-slate-50;
+           transition-all duration-150;
+  }
+  .btn-outline:hover {
+    @apply border-slate-300 bg-slate-50;
+  }
+  .btn-outline:active {
+    transform: scale(0.97);
   }
 
   .card {
@@ -42,15 +71,24 @@
   }
 
   .card-interactive {
-    @apply card active:scale-[0.98] transition-transform duration-150
-           hover:shadow-md cursor-pointer;
+    @apply bg-white rounded-2xl p-4 shadow-sm border border-slate-100
+           cursor-pointer transition-all duration-150;
+  }
+  .card-interactive:hover {
+    @apply shadow-md;
+  }
+  .card-interactive:active {
+    transform: scale(0.98);
   }
 
   .input {
     @apply w-full border border-slate-200 rounded-xl px-4 py-3
            text-slate-900 placeholder:text-slate-400
-           focus:outline-none focus:ring-2 focus:ring-court/30 focus:border-court
            transition-colors;
+  }
+  .input:focus {
+    @apply outline-none ring-2 border-slate-400;
+    --tw-ring-color: rgb(29 17 96 / 0.3);
   }
 
   .badge {
