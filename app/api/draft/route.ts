@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase-admin';
 import { getSessionUser } from '@/lib/auth-helpers';
 import { FieldValue } from 'firebase-admin/firestore';
 import { generateSnakePicks, shuffle } from '@/lib/draft';
+import { ensurePlayerPool } from '@/lib/player-pool';
 import type { DraftMode } from '@/types';
 
 // GET /api/draft?league_id=xxx — get active draft for a league
@@ -71,9 +72,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Need at least 2 teams to draft' }, { status: 400 });
   }
 
+  // Ensure we have enough players synced from BallDontLie
+  const totalRounds = rounds ?? 10;
+  const picksNeeded = teamIds.length * totalRounds;
+  try {
+    await ensurePlayerPool(picksNeeded + 50); // buffer for choice variety
+  } catch (err) {
+    console.error('[draft] Player pool sync warning:', err);
+    // Continue anyway — use whatever players are available
+  }
+
   // Randomize draft order
   const pickOrder = shuffle(teamIds);
-  const totalRounds = rounds ?? 10; // default: 10 rounds (full roster)
   const picks = generateSnakePicks(pickOrder, totalRounds);
 
   const draftRef = await adminDb.collection('draft_sessions').add({

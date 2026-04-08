@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { syncPlayers } from '@/lib/sync-players';
+import { getCurrentSeason } from '@/lib/player-pool';
 
 // POST /api/sync-players — trigger a full player sync from BallDontLie
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const season = body.season ?? 2024;
+  const season = body.season ?? getCurrentSeason();
   const maxPages = body.maxPages ?? 0;
 
   try {
