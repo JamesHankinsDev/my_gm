@@ -1,16 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Nav from '@/components/Nav';
 import type { League } from '@/types';
 
 export default function LeaguesPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
-  const [newLeagueName, setNewLeagueName] = useState('');
-  const [joinLeagueId, setJoinLeagueId] = useState('');
-  const [joinTeamName, setJoinTeamName] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [leagueName, setLeagueName] = useState('');
+  const [teamName, setTeamName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => { fetchLeagues(); }, []);
 
@@ -24,82 +26,86 @@ export default function LeaguesPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!newLeagueName.trim()) return;
+    if (!leagueName.trim()) return;
+
     const res = await fetch('/api/leagues', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newLeagueName }),
+      body: JSON.stringify({ name: leagueName, team_name: teamName || undefined }),
     });
     const json = await res.json();
-    if (!res.ok) { setError(json.error); } else { setNewLeagueName(''); fetchLeagues(); }
-  };
 
-  const handleJoin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (!joinLeagueId.trim() || !joinTeamName.trim()) return;
-    const res = await fetch('/api/teams', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ league_id: joinLeagueId, name: joinTeamName }),
-    });
-    const json = await res.json();
-    if (!res.ok) { setError(json.error); } else { setJoinLeagueId(''); setJoinTeamName(''); fetchLeagues(); }
+    if (!res.ok) {
+      setError(json.error);
+    } else {
+      setLeagueName('');
+      setTeamName('');
+      setShowCreate(false);
+      router.push(`/leagues/${json.data.id}`);
+    }
   };
 
   return (
     <>
       <Nav />
       <main className="page-container">
-        <div className="page-header">
-          <h1 className="page-title">My Leagues</h1>
-          <p className="page-subtitle">Manage your fantasy leagues</p>
+        <div className="page-header flex items-center justify-between">
+          <div>
+            <h1 className="page-title">My Leagues</h1>
+            <p className="page-subtitle">Create or join a fantasy league</p>
+          </div>
+          <button onClick={() => setShowCreate(!showCreate)} className="btn-primary text-sm !py-2 !px-4">
+            + New
+          </button>
         </div>
 
-        {/* League list */}
-        <div className="px-5 space-y-3 mb-6">
+        {/* Create league form */}
+        {showCreate && (
+          <div className="px-5 mb-5">
+            <div className="card">
+              <h2 className="font-bold text-slate-900 mb-3">Create a League</h2>
+              <form onSubmit={handleCreate} className="space-y-3">
+                <input type="text" placeholder="League name" value={leagueName} onChange={(e) => setLeagueName(e.target.value)} className="input" required />
+                <input type="text" placeholder="Your team name (optional)" value={teamName} onChange={(e) => setTeamName(e.target.value)} className="input" />
+                {error && <p className="text-flame text-sm font-medium">{error}</p>}
+                <div className="flex gap-2">
+                  <button type="submit" className="btn-primary flex-1">Create</button>
+                  <button type="button" onClick={() => setShowCreate(false)} className="btn-outline flex-1">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Leagues list */}
+        <div className="px-5 space-y-3">
           {loading ? (
-            <div className="card text-center text-slate-400 py-8">Loading...</div>
+            <div className="card text-center py-12 text-slate-400">Loading...</div>
           ) : leagues.length > 0 ? (
             leagues.map((league) => (
-              <a key={league.id} href={`/?league=${league.id}`} className="card-interactive flex items-center justify-between">
+              <a
+                key={league.id}
+                href={`/leagues/${league.id}`}
+                className="card-interactive flex items-center justify-between"
+              >
                 <div>
                   <h2 className="font-bold text-slate-900">{league.name}</h2>
                   <p className="text-xs text-slate-500">Season {league.season}</p>
                 </div>
-                <div className="text-right">
-                  <span className="badge bg-gold/20 text-gold-dark">${league.cap_limit} cap</span>
+                <div className="flex items-center gap-2">
+                  <span className="badge bg-court/10 text-court">${league.cap_limit} cap</span>
+                  <svg className="w-4 h-4 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
                 </div>
               </a>
             ))
           ) : (
-            <div className="card text-center py-8">
-              <p className="text-slate-400">You&apos;re not in any leagues yet.</p>
+            <div className="card text-center py-12">
+              <span className="text-4xl block mb-3">🏆</span>
+              <p className="text-slate-500 font-medium">No leagues yet</p>
+              <p className="text-xs text-slate-400 mt-1">Create one or join with an invite link</p>
             </div>
           )}
         </div>
-
-        {/* Create / Join forms */}
-        <div className="px-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="card">
-            <h2 className="font-bold text-slate-900 mb-3">Create a League</h2>
-            <form onSubmit={handleCreate} className="space-y-3">
-              <input type="text" placeholder="League name" value={newLeagueName} onChange={(e) => setNewLeagueName(e.target.value)} className="input" required />
-              <button type="submit" className="btn-primary w-full">Create League</button>
-            </form>
-          </div>
-
-          <div className="card">
-            <h2 className="font-bold text-slate-900 mb-3">Join a League</h2>
-            <form onSubmit={handleJoin} className="space-y-3">
-              <input type="text" placeholder="League ID" value={joinLeagueId} onChange={(e) => setJoinLeagueId(e.target.value)} className="input" required />
-              <input type="text" placeholder="Your team name" value={joinTeamName} onChange={(e) => setJoinTeamName(e.target.value)} className="input" required />
-              <button type="submit" className="btn-secondary w-full">Join League</button>
-            </form>
-          </div>
-        </div>
-
-        {error && <p className="text-flame text-sm font-medium px-5 mt-3">{error}</p>}
       </main>
     </>
   );

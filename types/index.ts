@@ -18,12 +18,32 @@ export type CapZone = 'compliant' | 'tax' | 'lockout';
 
 // ---- Database Row Types ----
 
+export interface LeagueSettings {
+  max_teams: number;
+  cap_limit: number;
+  trade_deadline_week: number;
+  commissioner_veto: boolean;
+  draft_type: 'snake' | 'auction';
+  scoring_notes: string;
+}
+
+export const DEFAULT_LEAGUE_SETTINGS: LeagueSettings = {
+  max_teams: 10,
+  cap_limit: 20,
+  trade_deadline_week: 18,
+  commissioner_veto: true,
+  draft_type: 'snake',
+  scoring_notes: '',
+};
+
 export interface League {
   id: string;
   name: string;
   commissioner_id: string;
   season: number;
   cap_limit: number;
+  invite_code: string;
+  settings: LeagueSettings;
   created_at: string;
 }
 

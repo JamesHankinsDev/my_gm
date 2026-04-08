@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { getSessionUser } from '@/lib/auth-helpers';
 import { FieldValue } from 'firebase-admin/firestore';
+import { DEFAULT_LEAGUE_SETTINGS } from '@/types';
+import crypto from 'crypto';
+
+const generateInviteCode = () => crypto.randomBytes(4).toString('hex'); // 8 char hex
 
 // GET /api/leagues — list leagues the user belongs to
 export async function GET() {
@@ -10,7 +14,6 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Get leagues where user has a team
   const teamsSnap = await adminDb
     .collection('teams')
     .where('user_id', '==', user.uid)
@@ -19,7 +22,6 @@ export async function GET() {
   const leagueIds = new Set<string>();
   teamsSnap.docs.forEach((doc) => leagueIds.add(doc.data().league_id));
 
-  // Also get leagues where user is commissioner
   const commissionerSnap = await adminDb
     .collection('leagues')
     .where('commissioner_id', '==', user.uid)
@@ -31,7 +33,6 @@ export async function GET() {
     return NextResponse.json({ data: [] });
   }
 
-  // Fetch all relevant leagues
   const leagueRefs = Array.from(leagueIds).map((id) =>
     adminDb.collection('leagues').doc(id)
   );
@@ -52,26 +53,28 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { name, season } = body;
+  const { name, season, team_name } = body;
 
   if (!name) {
     return NextResponse.json({ error: 'League name is required' }, { status: 400 });
   }
 
-  // Create the league
+  const invite_code = generateInviteCode();
+
   const leagueRef = await adminDb.collection('leagues').add({
     name,
     commissioner_id: user.uid,
     season: season ?? 2025,
-    cap_limit: 20,
+    cap_limit: DEFAULT_LEAGUE_SETTINGS.cap_limit,
+    invite_code,
+    settings: { ...DEFAULT_LEAGUE_SETTINGS },
     created_at: FieldValue.serverTimestamp(),
   });
 
-  // Auto-create a team for the commissioner
   await adminDb.collection('teams').add({
     league_id: leagueRef.id,
     user_id: user.uid,
-    name: `${name} - Team 1`,
+    name: team_name || `${name} - Team 1`,
     created_at: FieldValue.serverTimestamp(),
   });
 
