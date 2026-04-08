@@ -14,20 +14,25 @@ export async function GET(request: Request) {
   const leagueId = searchParams.get('league_id');
   if (!leagueId) return NextResponse.json({ error: 'league_id required' }, { status: 400 });
 
-  // Find the most recent draft for this league
+  // Find drafts for this league (no composite index needed)
   const snap = await adminDb
     .collection('draft_sessions')
     .where('league_id', '==', leagueId)
-    .orderBy('created_at', 'desc')
-    .limit(1)
     .get();
 
   if (snap.empty) {
     return NextResponse.json({ data: null });
   }
 
-  const doc = snap.docs[0];
-  return NextResponse.json({ data: { id: doc.id, ...doc.data() } });
+  // Pick the most recent by created_at (client-side sort)
+  const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  docs.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+    const aTime = (a.created_at as { seconds?: number })?.seconds ?? 0;
+    const bTime = (b.created_at as { seconds?: number })?.seconds ?? 0;
+    return bTime - aTime;
+  });
+
+  return NextResponse.json({ data: docs[0] });
 }
 
 // POST /api/draft — create a new draft session

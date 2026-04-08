@@ -69,6 +69,21 @@ export default function DraftPage() {
     return () => clearInterval(interval);
   }, [draft, fetchDraft]);
 
+  // Auto-advance mock draft AI picks on load if it's not user's turn
+  useEffect(() => {
+    if (!draft || draft.status !== 'in_progress' || draft.mode !== 'mock') return;
+    if (!userTeamId) return;
+    const current = draft.picks?.find((p: DraftPick) => p.overall === draft.current_pick);
+    if (current && current.team_id !== userTeamId) {
+      // Not our turn — run auto-picks
+      setPicking(true);
+      fetch(`/api/draft/${draft.id}`, { method: 'PATCH' })
+        .then(() => fetchDraft())
+        .then(() => setPicking(false));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft?.id, userTeamId]);
+
   const createDraft = async (mode: 'mock' | 'live') => {
     if (!leagueId) return;
     setCreating(true);
@@ -80,8 +95,15 @@ export default function DraftPage() {
     const json = await res.json();
     setCreating(false);
     if (res.ok) {
-      fetchDraft();
-      fetchPlayers();
+      await fetchDraft();
+      await fetchPlayers();
+      // For mock drafts, immediately auto-pick AI teams to user's first turn
+      if (mode === 'mock' && json.data?.id) {
+        setPicking(true);
+        await fetch(`/api/draft/${json.data.id}`, { method: 'PATCH' });
+        await fetchDraft();
+        setPicking(false);
+      }
     } else {
       alert(json.error);
     }
