@@ -10,34 +10,36 @@ interface RosterSlotProps {
   tier: number;
 }
 
-const slotLabels: Record<SlotType, string> = {
-  starter: 'Starter',
-  sixth_man: '6th Man',
-  rotation: 'Rotation',
-  bench: 'Bench',
-  ir: 'IR',
+const slotConfig: Record<SlotType, { label: string; bg: string; text: string }> = {
+  starter: { label: 'START', bg: 'bg-court', text: 'text-white' },
+  sixth_man: { label: '6TH', bg: 'bg-flame', text: 'text-white' },
+  rotation: { label: 'ROT', bg: 'bg-court-light', text: 'text-white' },
+  bench: { label: 'BNC', bg: 'bg-slate-300', text: 'text-slate-700' },
+  ir: { label: 'IR', bg: 'bg-slate-800', text: 'text-white' },
 };
 
-const slotBadgeColors: Record<SlotType, string> = {
-  starter: 'bg-blue-600',
-  sixth_man: 'bg-purple-600',
-  rotation: 'bg-teal-600',
-  bench: 'bg-gray-500',
-  ir: 'bg-red-700',
+const tierColors: Record<number, string> = {
+  1: 'text-slate-400',
+  2: 'text-emerald-500',
+  3: 'text-blue-500',
+  4: 'text-purple-500',
+  5: 'text-gold-dark',
 };
 
 export default function RosterSlot({ slotType, slotPosition, playerName, salary, tier }: RosterSlotProps) {
+  const config = slotConfig[slotType];
+
   return (
-    <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
-      <div className="flex items-center gap-3">
-        <span className={`text-xs font-bold px-2 py-1 rounded text-white ${slotBadgeColors[slotType]}`}>
-          {slotLabels[slotType]} {slotPosition}
-        </span>
-        <span className="font-medium">{playerName}</span>
+    <div className="card flex items-center gap-3">
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${config.bg}`}>
+        <span className={`text-xs font-black ${config.text}`}>{config.label}</span>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-500">Tier {tier}</span>
-        <span className="font-bold text-green-700">${salary.toFixed(1)}</span>
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-sm text-slate-900 truncate">{playerName}</p>
+        <p className={`text-xs font-semibold ${tierColors[tier] ?? tierColors[1]}`}>Tier {tier}</p>
+      </div>
+      <div className="text-right">
+        <span className="text-sm font-black text-slate-900">${salary.toFixed(1)}</span>
       </div>
     </div>
   );

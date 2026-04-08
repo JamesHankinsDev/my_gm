@@ -11,48 +11,43 @@ interface PlayerCardProps {
   per36Ast: number;
 }
 
-const tierColors: Record<number, string> = {
-  1: 'bg-gray-400',
-  2: 'bg-green-500',
-  3: 'bg-blue-500',
-  4: 'bg-purple-500',
-  5: 'bg-amber-500',
+const tierBadge: Record<number, { bg: string; text: string }> = {
+  1: { bg: 'bg-slate-100', text: 'text-slate-500' },
+  2: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
+  3: { bg: 'bg-blue-100', text: 'text-blue-700' },
+  4: { bg: 'bg-purple-100', text: 'text-purple-700' },
+  5: { bg: 'bg-gold/20', text: 'text-gold-dark' },
 };
 
 export default function PlayerCard({
   name, position, tier, salary, gamesPlayed, per36Pts, per36Reb, per36Ast,
 }: PlayerCardProps) {
+  const badge = tierBadge[tier] ?? tierBadge[1];
+
   return (
-    <div className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <h3 className="font-bold text-lg">{name}</h3>
-          <span className="text-sm text-gray-500">{position}</span>
+    <div className="card">
+      <div className="flex items-start justify-between mb-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="font-bold text-slate-900 truncate">{name}</h3>
+          <p className="text-xs text-slate-500">{position}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`text-xs font-bold px-2 py-1 rounded text-white ${tierColors[tier] ?? tierColors[1]}`}>
-            Tier {tier}
-          </span>
-          <span className="font-bold text-green-700">${salary.toFixed(1)}</span>
+        <div className="flex items-center gap-2 ml-2 shrink-0">
+          <span className={`badge ${badge.bg} ${badge.text}`}>T{tier}</span>
+          <span className="text-sm font-black text-slate-900">${salary.toFixed(1)}</span>
         </div>
       </div>
-      <div className="grid grid-cols-4 gap-2 text-center text-sm mt-3">
-        <div>
-          <div className="text-gray-500">GP</div>
-          <div className="font-medium">{gamesPlayed}</div>
-        </div>
-        <div>
-          <div className="text-gray-500">PTS/36</div>
-          <div className="font-medium">{per36Pts.toFixed(1)}</div>
-        </div>
-        <div>
-          <div className="text-gray-500">REB/36</div>
-          <div className="font-medium">{per36Reb.toFixed(1)}</div>
-        </div>
-        <div>
-          <div className="text-gray-500">AST/36</div>
-          <div className="font-medium">{per36Ast.toFixed(1)}</div>
-        </div>
+      <div className="grid grid-cols-4 gap-1">
+        {[
+          { label: 'GP', value: String(gamesPlayed) },
+          { label: 'PTS', value: per36Pts.toFixed(1) },
+          { label: 'REB', value: per36Reb.toFixed(1) },
+          { label: 'AST', value: per36Ast.toFixed(1) },
+        ].map((stat) => (
+          <div key={stat.label} className="bg-slate-50 rounded-lg py-2 text-center">
+            <div className="text-[10px] text-slate-400 font-medium">{stat.label}</div>
+            <div className="text-sm font-bold text-slate-800">{stat.value}</div>
+          </div>
+        ))}
       </div>
     </div>
   );

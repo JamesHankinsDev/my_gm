@@ -1,68 +1,48 @@
 import Nav from '@/components/Nav';
 
+const cards = [
+  { title: 'My Leagues', desc: 'Create or join a league', href: '/leagues', icon: '🏆', color: 'bg-gold/10 border-gold/20' },
+  { title: 'Roster', desc: 'Manage your players & cap', href: '/roster', icon: '👥', color: 'bg-court/5 border-court/10' },
+  { title: 'Lineup', desc: 'Set coaching decisions', href: '/lineup', icon: '📋', color: 'bg-flame/5 border-flame/10' },
+  { title: 'Scoring', desc: 'Weekly breakdowns', href: '/scoring', icon: '📊', color: 'bg-court/5 border-court/10' },
+  { title: 'Draft', desc: 'Lottery & picks', href: '/league/draft', icon: '🎯', color: 'bg-gold/10 border-gold/20' },
+  { title: 'Trades', desc: 'Multi-team trade hub', href: '/league/trades', icon: '🔄', color: 'bg-flame/5 border-flame/10' },
+  { title: 'Standings', desc: 'League rankings', href: '/league/standings', icon: '📈', color: 'bg-court/5 border-court/10' },
+  { title: 'Free Agents', desc: 'Browse by tier', href: '/players', icon: '🏀', color: 'bg-gold/10 border-gold/20' },
+];
+
 export default function Home() {
   return (
     <>
       <Nav />
-      <main className="p-8 max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold mb-2">Hoops GM</h1>
-        <p className="text-gray-600 mb-8">Fantasy Basketball League — Front Office Mode</p>
+      <main className="page-container">
+        {/* Hero banner */}
+        <div className="bg-court mx-3 mt-3 rounded-2xl p-6 md:mx-5">
+          <h1 className="text-2xl md:text-3xl font-bold text-white">
+            Welcome to <span className="text-gold">Hoops GM</span>
+          </h1>
+          <p className="text-white/60 text-sm mt-1">Front Office Mode — manage your franchise</p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <DashboardCard
-            title="My Leagues"
-            description="Create or join a fantasy league"
-            href="/leagues"
-          />
-          <DashboardCard
-            title="My Roster"
-            description="Manage your players, slots, and salary cap"
-            href="/roster"
-          />
-          <DashboardCard
-            title="Weekly Lineup"
-            description="Set coaching decisions and minute predictions"
-            href="/lineup"
-          />
-          <DashboardCard
-            title="Scoring"
-            description="View weekly scoring breakdowns"
-            href="/scoring"
-          />
-          <DashboardCard
-            title="Draft Board"
-            description="Draft lottery and pick management"
-            href="/league/draft"
-          />
-          <DashboardCard
-            title="Trade Hub"
-            description="Propose and review multi-team trades"
-            href="/league/trades"
-          />
-          <DashboardCard
-            title="Standings"
-            description="League standings and cap info"
-            href="/league/standings"
-          />
-          <DashboardCard
-            title="Free Agents"
-            description="Browse available players by tier"
-            href="/players"
-          />
+        {/* Quick action cards */}
+        <div className="px-3 mt-5 md:px-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {cards.map((card) => (
+              <a
+                key={card.href}
+                href={card.href}
+                className={`card-interactive flex flex-col gap-2 border ${card.color}`}
+              >
+                <span className="text-2xl">{card.icon}</span>
+                <div>
+                  <h2 className="font-bold text-slate-900 text-sm">{card.title}</h2>
+                  <p className="text-xs text-slate-500">{card.desc}</p>
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
       </main>
     </>
-  );
-}
-
-function DashboardCard({ title, description, href }: { title: string; description: string; href: string }) {
-  return (
-    <a
-      href={href}
-      className="block p-6 border rounded-lg hover:shadow-md transition-shadow bg-white"
-    >
-      <h2 className="text-xl font-semibold mb-1">{title}</h2>
-      <p className="text-gray-500 text-sm">{description}</p>
-    </a>
   );
 }

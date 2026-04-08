@@ -2,26 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans antialiased;
+  }
+
+  /* Safe area padding for PWA / notched devices */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
+@layer components {
+  .btn-primary {
+    @apply bg-flame text-white font-semibold rounded-xl px-5 py-3
+           active:scale-[0.97] transition-all duration-150
+           hover:bg-flame-dark focus:outline-none focus:ring-2 focus:ring-flame/50;
+  }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .btn-secondary {
+    @apply bg-court text-white font-semibold rounded-xl px-5 py-3
+           active:scale-[0.97] transition-all duration-150
+           hover:bg-court-light focus:outline-none focus:ring-2 focus:ring-court/50;
+  }
+
+  .btn-outline {
+    @apply border-2 border-slate-200 text-slate-700 font-semibold rounded-xl px-5 py-3
+           active:scale-[0.97] transition-all duration-150
+           hover:border-slate-300 hover:bg-slate-50;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl p-4 shadow-sm border border-slate-100;
+  }
+
+  .card-interactive {
+    @apply card active:scale-[0.98] transition-transform duration-150
+           hover:shadow-md cursor-pointer;
+  }
+
+  .input {
+    @apply w-full border border-slate-200 rounded-xl px-4 py-3
+           text-slate-900 placeholder:text-slate-400
+           focus:outline-none focus:ring-2 focus:ring-court/30 focus:border-court
+           transition-colors;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold;
+  }
+
+  .page-container {
+    @apply min-h-screen pb-24 md:pb-8;
+  }
+
+  .page-header {
+    @apply px-5 pt-6 pb-4;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-slate-900;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-slate-500 mt-1;
+  }
+
+  .section-title {
+    @apply text-lg font-bold text-slate-800 px-5 mb-3;
   }
 }
