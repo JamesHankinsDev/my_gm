@@ -13,7 +13,8 @@ export async function POST(request: Request) {
 
   try {
     // Verify the ID token
-    await adminAuth.verifyIdToken(idToken);
+    const decoded = await adminAuth.verifyIdToken(idToken);
+    console.log('[session] Verified token for:', decoded.email ?? decoded.uid);
 
     // Create a session cookie (5 days)
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
@@ -29,8 +30,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ status: 'ok' });
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[session] Error:', message);
     return NextResponse.json(
-      { error: `Session creation failed: ${err instanceof Error ? err.message : String(err)}` },
+      { error: `Session creation failed: ${message}` },
       { status: 401 }
     );
   }
