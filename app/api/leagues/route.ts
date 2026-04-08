@@ -1,45 +1,52 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServer } from '@/lib/supabase-server';
+import { adminDb } from '@/lib/firebase-admin';
+import { getSessionUser } from '@/lib/auth-helpers';
+import { FieldValue } from 'firebase-admin/firestore';
 
 // GET /api/leagues — list leagues the user belongs to
 export async function GET() {
-  const supabase = createSupabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Get leagues where the user has a team
-  const { data: teams, error: teamsError } = await supabase
-    .from('teams')
-    .select('league_id')
-    .eq('user_id', user.id);
+  // Get leagues where user has a team
+  const teamsSnap = await adminDb
+    .collection('teams')
+    .where('user_id', '==', user.uid)
+    .get();
 
-  if (teamsError) {
-    return NextResponse.json({ error: teamsError.message }, { status: 500 });
+  const leagueIds = new Set<string>();
+  teamsSnap.docs.forEach((doc) => leagueIds.add(doc.data().league_id));
+
+  // Also get leagues where user is commissioner
+  const commissionerSnap = await adminDb
+    .collection('leagues')
+    .where('commissioner_id', '==', user.uid)
+    .get();
+
+  commissionerSnap.docs.forEach((doc) => leagueIds.add(doc.id));
+
+  if (leagueIds.size === 0) {
+    return NextResponse.json({ data: [] });
   }
 
-  const leagueIds = teams?.map((t) => t.league_id) ?? [];
+  // Fetch all relevant leagues
+  const leagueRefs = Array.from(leagueIds).map((id) =>
+    adminDb.collection('leagues').doc(id)
+  );
+  const leagueDocs = await adminDb.getAll(...leagueRefs);
 
-  // Also include leagues the user is commissioner of
-  const { data: leagues, error } = await supabase
-    .from('leagues')
-    .select('*')
-    .or(`commissioner_id.eq.${user.id}${leagueIds.length > 0 ? `,id.in.(${leagueIds.join(',')})` : ''}`);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  const leagues = leagueDocs
+    .filter((doc) => doc.exists)
+    .map((doc) => ({ id: doc.id, ...doc.data() }));
 
   return NextResponse.json({ data: leagues });
 }
 
 // POST /api/leagues — create a new league
 export async function POST(request: Request) {
-  const supabase = createSupabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -52,32 +59,26 @@ export async function POST(request: Request) {
   }
 
   // Create the league
-  const { data: league, error: leagueError } = await supabase
-    .from('leagues')
-    .insert({
-      name,
-      commissioner_id: user.id,
-      season: season ?? 2025,
-    })
-    .select()
-    .single();
-
-  if (leagueError) {
-    return NextResponse.json({ error: leagueError.message }, { status: 500 });
-  }
+  const leagueRef = await adminDb.collection('leagues').add({
+    name,
+    commissioner_id: user.uid,
+    season: season ?? 2025,
+    cap_limit: 20,
+    created_at: FieldValue.serverTimestamp(),
+  });
 
   // Auto-create a team for the commissioner
-  const { error: teamError } = await supabase
-    .from('teams')
-    .insert({
-      league_id: league.id,
-      user_id: user.id,
-      name: `${name} - Team 1`,
-    });
+  await adminDb.collection('teams').add({
+    league_id: leagueRef.id,
+    user_id: user.uid,
+    name: `${name} - Team 1`,
+    created_at: FieldValue.serverTimestamp(),
+  });
 
-  if (teamError) {
-    return NextResponse.json({ error: teamError.message }, { status: 500 });
-  }
+  const leagueDoc = await leagueRef.get();
 
-  return NextResponse.json({ data: league }, { status: 201 });
+  return NextResponse.json(
+    { data: { id: leagueRef.id, ...leagueDoc.data() } },
+    { status: 201 }
+  );
 }

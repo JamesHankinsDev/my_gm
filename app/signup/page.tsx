@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createSupabaseBrowser } from '@/lib/supabase-browser';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -11,7 +12,6 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createSupabaseBrowser();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,14 +29,27 @@ export default function SignupPage() {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      const idToken = await cred.user.getIdToken();
 
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
+      // Create server-side session cookie
+      const res = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error || 'Session creation failed');
+      }
+
       router.push('/');
       router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Sign up failed');
+      setLoading(false);
     }
   };
 

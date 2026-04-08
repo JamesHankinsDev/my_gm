@@ -1,14 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { createSupabaseBrowser } from '@/lib/supabase-browser';
 
 export default function Nav() {
   const router = useRouter();
-  const supabase = createSupabaseBrowser();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await fetch('/api/auth/session', { method: 'DELETE' });
     router.push('/login');
     router.refresh();
   };

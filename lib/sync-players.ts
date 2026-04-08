@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { adminDb } from './firebase-admin';
 import { getPlayers, getSeasonAverage, calcPer36, parseMinutes } from './balldontlie';
 import { assignTier } from './scoring';
 import { salaryForTier } from './salary';
@@ -12,14 +12,6 @@ interface SyncResult {
   skipped: number;
   errors: string[];
 }
-
-// Build a Supabase client using the service role key (server-side only)
-const getServiceClient = () => {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error('Missing Supabase env vars');
-  return createClient(url, key);
-};
 
 // Calculate fantasy PPG from season averages for tier assignment
 const calcFantasyPPG = (avg: BDLSeasonAverage): number => {
@@ -36,7 +28,6 @@ const calcFantasyPPG = (avg: BDLSeasonAverage): number => {
   const per36Fg3m = calcPer36(avg.fg3m, min);
   const per36Fgmiss = calcPer36(avg.fga - avg.fgm, min);
 
-  // Simplified fantasy score using base weights (no milestones for tier calc)
   return (
     per36Pts * 1.0 +
     per36Fg3m * 0.1 +
@@ -50,10 +41,9 @@ const calcFantasyPPG = (avg: BDLSeasonAverage): number => {
   );
 };
 
-// Sync NBA players and their season averages into the players table
+// Sync NBA players and their season averages into Firestore
 // Set maxPages to limit how many pages to fetch (0 = all)
 export const syncPlayers = async (season: number = 2024, maxPages: number = 0): Promise<SyncResult> => {
-  const supabase = getServiceClient();
   const result: SyncResult = { synced: 0, skipped: 0, errors: [] };
 
   const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -65,6 +55,7 @@ export const syncPlayers = async (season: number = 2024, maxPages: number = 0): 
   while (hasMore) {
     page++;
     if (maxPages > 0 && page > maxPages) break;
+
     // Fetch a page of players (with rate limit pause)
     await delay(RATE_LIMIT_DELAY_MS);
     const playersRes = await getPlayers(undefined, cursor, BATCH_SIZE);
@@ -85,6 +76,7 @@ export const syncPlayers = async (season: number = 2024, maxPages: number = 0): 
       } catch {
         // Player may not have stats for this season — skip averages
       }
+
       const min = avg ? parseMinutes(avg.min) : 0;
       const gamesPlayed = avg?.games_played ?? 0;
 
@@ -107,9 +99,10 @@ export const syncPlayers = async (season: number = 2024, maxPages: number = 0): 
         continue;
       }
 
-      const { error } = await supabase
-        .from('players')
-        .upsert(
+      try {
+        // Use balldontlie_id as the document ID for upsert behavior
+        const docRef = adminDb.collection('players').doc(String(player.id));
+        await docRef.set(
           {
             balldontlie_id: player.id,
             full_name: fullName,
@@ -127,13 +120,11 @@ export const syncPlayers = async (season: number = 2024, maxPages: number = 0): 
             per36_fg3m: round2(per36Fg3m),
             per36_fgmiss: round2(per36Fgmiss),
           },
-          { onConflict: 'balldontlie_id' }
+          { merge: true }
         );
-
-      if (error) {
-        result.errors.push(`Failed to upsert ${fullName}: ${error.message}`);
-      } else {
         result.synced++;
+      } catch (err) {
+        result.errors.push(`Failed to upsert ${fullName}: ${err}`);
       }
     }
 

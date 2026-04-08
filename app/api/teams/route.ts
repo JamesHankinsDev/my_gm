@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseServer } from '@/lib/supabase-server';
+import { adminDb } from '@/lib/firebase-admin';
+import { getSessionUser } from '@/lib/auth-helpers';
+import { FieldValue } from 'firebase-admin/firestore';
 
 // GET /api/teams — get the user's teams (optionally filtered by league)
 export async function GET(request: Request) {
-  const supabase = createSupabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -13,29 +13,23 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('league_id');
 
-  let query = supabase
-    .from('teams')
-    .select('*, leagues(name, season)')
-    .eq('user_id', user.id);
+  let query: FirebaseFirestore.Query = adminDb
+    .collection('teams')
+    .where('user_id', '==', user.uid);
 
   if (leagueId) {
-    query = query.eq('league_id', leagueId);
+    query = query.where('league_id', '==', leagueId);
   }
 
-  const { data, error } = await query;
+  const snap = await query.get();
+  const teams = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ data });
+  return NextResponse.json({ data: teams });
 }
 
 // POST /api/teams — join a league by creating a team
 export async function POST(request: Request) {
-  const supabase = createSupabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -48,38 +42,35 @@ export async function POST(request: Request) {
   }
 
   // Check league exists
-  const { data: league, error: leagueError } = await supabase
-    .from('leagues')
-    .select('id')
-    .eq('id', league_id)
-    .single();
-
-  if (leagueError || !league) {
+  const leagueDoc = await adminDb.collection('leagues').doc(league_id).get();
+  if (!leagueDoc.exists) {
     return NextResponse.json({ error: 'League not found' }, { status: 404 });
   }
 
   // Check user doesn't already have a team in this league
-  const { data: existing } = await supabase
-    .from('teams')
-    .select('id')
-    .eq('league_id', league_id)
-    .eq('user_id', user.id)
-    .single();
+  const existing = await adminDb
+    .collection('teams')
+    .where('league_id', '==', league_id)
+    .where('user_id', '==', user.uid)
+    .limit(1)
+    .get();
 
-  if (existing) {
+  if (!existing.empty) {
     return NextResponse.json({ error: 'You already have a team in this league' }, { status: 409 });
   }
 
   // Create team
-  const { data: team, error: teamError } = await supabase
-    .from('teams')
-    .insert({ league_id, user_id: user.id, name })
-    .select()
-    .single();
+  const teamRef = await adminDb.collection('teams').add({
+    league_id,
+    user_id: user.uid,
+    name,
+    created_at: FieldValue.serverTimestamp(),
+  });
 
-  if (teamError) {
-    return NextResponse.json({ error: teamError.message }, { status: 500 });
-  }
+  const teamDoc = await teamRef.get();
 
-  return NextResponse.json({ data: team }, { status: 201 });
+  return NextResponse.json(
+    { data: { id: teamRef.id, ...teamDoc.data() } },
+    { status: 201 }
+  );
 }

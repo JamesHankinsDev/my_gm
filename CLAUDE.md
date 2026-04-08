@@ -7,16 +7,15 @@
 - `npm run typecheck` — TypeScript strict check
 - `npm test` — run Jest tests
 - `npm run test:watch` — run tests in watch mode
-- `supabase db push` — push schema migrations (requires `supabase link` first)
 
 ## Project Structure
 
 ```
 /app              — Next.js App Router pages
-/app/api          — API routes (scoring, roster, draft, trades, lineup)
-/components       — React components (CapBar, RosterSlot, PlayerCard, ScoringBreakdown)
-/lib              — Shared logic (scoring, salary, simulation, balldontlie, supabase)
-/supabase         — DB schema and migrations
+/app/api          — API routes (scoring, roster, draft, trades, lineup, auth)
+/components       — React components (CapBar, RosterSlot, PlayerCard, ScoringBreakdown, Nav)
+/lib              — Shared logic (scoring, salary, simulation, balldontlie, firebase)
+/supabase         — DB schema reference (Firestore collections mirror this structure)
 /types            — Shared TypeScript types
 /__tests__        — Unit tests (scoring, salary)
 ```
@@ -38,6 +37,13 @@
 - Per-36 eligibility requires 20+ games played
 - Scoring mirrors Sleeper settings + coaching accuracy bonus
 
+## Auth & Database
+
+- **Auth**: Firebase Auth (email/password) with server-side session cookies
+- **Database**: Firebase Firestore
+- **Admin SDK**: Used in API routes for server-side operations
+- Middleware checks session cookie; redirects unauthenticated users to /login
+
 ## Testing
 
 - Unit test all scoring and salary logic in `/lib`
@@ -48,6 +54,5 @@
 
 Copy `.env.example` to `.env.local` and fill in:
 - `BALLDONTLIE_API_KEY` — BallDontLie API key
-- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key
-- `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key
+- `NEXT_PUBLIC_FIREBASE_*` — Firebase client config (from Firebase Console > Project Settings)
+- `FIREBASE_PROJECT_ID` / `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` — Firebase Admin SDK service account

@@ -6,8 +6,8 @@ A full-stack fantasy basketball web app with salary cap management, per-36 minut
 
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
 - **Backend**: Next.js API routes
-- **Database**: Supabase (Postgres)
-- **Auth**: Supabase Auth
+- **Database**: Firebase Firestore
+- **Auth**: Firebase Auth (email/password, session cookies)
 - **Data**: BallDontLie API (NBA stats, player data, game logs)
 - **Payments**: Stripe (future — per-league subscriptions)
 
@@ -32,16 +32,14 @@ npm run dev
 | `npm run build` | Production build |
 | `npm run typecheck` | TypeScript check |
 | `npm test` | Run tests |
-| `supabase db push` | Push schema migrations (requires `supabase link`) |
 
 ## Project Structure
 
 ```
 /app              — Next.js App Router pages
-/app/api          — API routes (scoring, roster, draft, trades)
+/app/api          — API routes (scoring, roster, draft, trades, auth)
 /components       — React components
-/lib              — Shared logic (scoring, salary, simulation)
-/supabase         — DB schema and migrations
+/lib              — Shared logic (scoring, salary, simulation, firebase)
 /types            — Shared TypeScript types
 /__tests__        — Unit tests
 ```
